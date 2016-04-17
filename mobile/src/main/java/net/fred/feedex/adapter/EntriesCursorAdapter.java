@@ -49,10 +49,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
-import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.Html;
 import android.text.TextUtils;
 import android.view.View;
@@ -63,7 +60,6 @@ import android.widget.TextView;
 import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.BitmapImageViewTarget;
 
 import net.fred.feedex.Constants;
 import net.fred.feedex.MainApplication;
@@ -113,16 +109,9 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         ColorGenerator generator = ColorGenerator.DEFAULT;
         int color = generator.getColor(feedId); // The color is specific to the feedId (which shouldn't change)
         String lettersForName = feedName != null ? (feedName.length() < 2 ? feedName.toUpperCase() : feedName.substring(0, 2).toUpperCase()) : "";
-        TextDrawable letterDrawable = TextDrawable.builder().buildRound(lettersForName, color);
+        TextDrawable letterDrawable = TextDrawable.builder().buildRect(lettersForName, color);
         if (mainImgUrl != null) {
-            Glide.with(context).load(mainImgUrl).asBitmap().centerCrop().placeholder(letterDrawable).error(letterDrawable).into(new BitmapImageViewTarget(holder.mainImgView) {
-                @Override
-                protected void setResource(Bitmap resource) {
-                    RoundedBitmapDrawable circularBitmapDrawable = RoundedBitmapDrawableFactory.create(context.getResources(), resource);
-                    circularBitmapDrawable.setCircular(true);
-                    getView().setImageDrawable(circularBitmapDrawable);
-                }
-            });
+            Glide.with(context).load(mainImgUrl).centerCrop().placeholder(letterDrawable).error(letterDrawable).into(holder.mainImgView);
         } else {
             Glide.clear(holder.mainImgView);
             holder.mainImgView.setImageDrawable(letterDrawable);
@@ -202,17 +191,6 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
                 }
             }.start();
         }
-    }
-
-    public void markAllAsRead(final long untilDate) {
-        new Thread() {
-            @Override
-            public void run() {
-                ContentResolver cr = MainApplication.getContext().getContentResolver();
-                String where = EntryColumns.WHERE_UNREAD + Constants.DB_AND + '(' + EntryColumns.FETCH_DATE + Constants.DB_IS_NULL + Constants.DB_OR + EntryColumns.FETCH_DATE + "<=" + untilDate + ')';
-                cr.update(mUri, FeedData.getReadContentValues(), where, null);
-            }
-        }.start();
     }
 
     @Override
